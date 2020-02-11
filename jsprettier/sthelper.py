@@ -12,8 +12,10 @@ from .const import PROJECT_SETTINGS_KEY
 from .const import SETTINGS_FILENAME
 
 from .util import ensure_file_has_ext
+from .util import find_yarn_prettier
 from .util import is_bool_str
 from .util import is_str_none_or_empty
+from .util import is_yarn_global_prettier
 from .util import is_windows
 from .util import memoize
 from .util import to_str
@@ -141,6 +143,26 @@ def has_selection(view):
             return True
     return False
 
+def resolve_yarn_prettier_cli_path(view, st_project_path):
+    # find the yarn prettier from the view path
+    file_name = view.file_name()
+    contiainer_directory =  os.path.dirname(file_name)
+
+    result = find_yarn_prettier(contiainer_directory)
+    if not is_str_none_or_empty(result):
+        print("found yarn from file: ", result)
+        return (["yarn", "prettier"], False, result)
+
+    result = find_yarn_prettier(st_project_path)
+    if not is_str_none_or_empty(result):
+        print("found yarn from project: ", result)
+        return (["yarn", "prettier"], False, result)
+
+    if is_yarn_global_prettier():
+        print("found yarn global prettier")
+        return (["yarn-global", "prettier"], True, os.getcwd())
+
+    return None
 
 @memoize
 def resolve_prettier_cli_path(view, plugin_path, st_project_path):

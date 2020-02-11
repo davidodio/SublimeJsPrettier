@@ -37,6 +37,7 @@ if version_info[0] == 2:
     from jsprettier.sthelper import parse_additional_cli_args
     from jsprettier.sthelper import resolve_node_path
     from jsprettier.sthelper import resolve_prettier_cli_path
+    from jsprettier.sthelper import resolve_yarn_prettier_cli_path    
     from jsprettier.sthelper import scroll_view_to
     from jsprettier.sthelper import st_status_message
 
@@ -78,6 +79,7 @@ else:
     from .jsprettier.sthelper import parse_additional_cli_args
     from .jsprettier.sthelper import resolve_node_path
     from .jsprettier.sthelper import resolve_prettier_cli_path
+    from .jsprettier.sthelper import resolve_yarn_prettier_cli_path
     from .jsprettier.sthelper import scroll_view_to
     from .jsprettier.sthelper import st_status_message
 
@@ -248,7 +250,12 @@ class JsPrettierCommand(sublime_plugin.TextCommand):
         #
         # Get node and prettier command paths:
         node_path = self.node_path
-        prettier_cli_path = resolve_prettier_cli_path(view, PLUGIN_PATH, st_project_path)
+        prettier_cli_path = resolve_yarn_prettier_cli_path(view, st_project_path)
+        print("prettier cli path:", prettier_cli_path)
+
+        if is_str_none_or_empty(prettier_cli_path):
+            prettier_cli_path = resolve_prettier_cli_path(view, PLUGIN_PATH, st_project_path)
+
         if not prettier_cli_path:
             log_error(
                 "Ensure 'prettier' is installed in your environment PATH, "
@@ -390,9 +397,14 @@ class JsPrettierCommand(sublime_plugin.TextCommand):
                 + ['--stdin'] \
                 + prettier_options
         elif is_str_none_or_empty(node_path):
-            cmd = [prettier_cli_path] \
-                + ['--stdin'] \
-                + prettier_options
+            if isinstance(prettier_cli_path, tuple):
+                cmd = prettier_cli_path[0] \
+                    + ['--stdin'] \
+                    + prettier_options
+            else:
+                cmd = [prettier_cli_path] \
+                    + ['--stdin'] \
+                    + prettier_options
         else:
             cmd = [node_path] \
                 + [prettier_cli_path] \
@@ -402,12 +414,21 @@ class JsPrettierCommand(sublime_plugin.TextCommand):
         try:
             format_debug_message('Prettier CLI Command', list_to_str(cmd), debug_enabled(view))
 
-            proc = Popen(
-                cmd, stdin=PIPE,
-                stderr=PIPE,
-                stdout=PIPE,
-                env=get_proc_env(),
-                shell=is_windows())
+            if isinstance(prettier_cli_path, tuple):
+                proc = Popen(
+                    cmd, stdin=PIPE,
+                    stderr=PIPE,
+                    stdout=PIPE,
+                    cwd=prettier_cli_path[-1],
+                    env=get_proc_env(),
+                    shell=is_windows())
+            else:
+                proc = Popen(
+                    cmd, stdin=PIPE,
+                    stderr=PIPE,
+                    stdout=PIPE,
+                    env=get_proc_env(),
+                    shell=is_windows())
 
             stdout, stderr = proc.communicate(input=source.encode('utf-8'))
             if proc.returncode != 0:

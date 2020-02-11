@@ -8,6 +8,7 @@ import functools
 import json
 import os
 import platform
+import subprocess
 
 from re import sub
 
@@ -79,6 +80,41 @@ def find_prettier_config(start_dir, alt_dirs=None):
 
     return None
 
+def is_yarn_global_prettier():
+    try:
+        subprocess.check_call(["yarn-global", "bin", "prettier"], env=get_proc_env())
+        print("yarn global prettier: ", True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+        print("yarn global prettier: ", False)
+        return False
+
+def find_yarn_prettier(start_dir):
+    """
+    Find where `yarn prettier` command is available searching up the file hierarchy.
+
+    Hat tip to SublimeLinter 3!
+
+    :param start_dir: The search start path.
+    """
+    dirs = _generate_dirs(start_dir, limit=500)
+    for d in dirs:
+        if _test_yarn_prettier(d):
+            return d
+
+    return None
+
+def _test_yarn_prettier(dir):
+    try:
+        print("cmd dir: ", dir)
+        subprocess.check_call(["yarn", "bin", "prettier"], cwd=dir, env=get_proc_env())
+        print("yarn bin prettier: ", True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+        print("returning false")
+        return False
 
 def _generate_dirs(start_dir, limit=None):
     """
@@ -300,13 +336,22 @@ def which(executable, path=None):
     return None
 
 
-def get_proc_env():
+def get_proc_env(additional_paths = []):
     env = None
     if not is_windows():
         env = os.environ.copy()
         usr_path = ':/usr/local/bin'
         if not env_path_contains(usr_path) and env_path_exists(usr_path):
             env['PATH'] += usr_path
+
+        usr_path = ':/Users/dod/.asdf/shims'    
+        if not env_path_contains(usr_path) and env_path_exists(usr_path):
+            env['PATH'] += usr_path
+
+        usr_path = ':/Users/dod/.yarn-global'    
+        if not env_path_contains(usr_path) and env_path_exists(usr_path):
+            env['PATH'] += usr_path
+
     return env
 
 
