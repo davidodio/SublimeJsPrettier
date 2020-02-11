@@ -83,11 +83,8 @@ def find_prettier_config(start_dir, alt_dirs=None):
 def is_yarn_global_prettier():
     try:
         subprocess.check_call(["yarn-global", "bin", "prettier"], env=get_proc_env())
-        print("yarn global prettier: ", True)
         return True
     except subprocess.CalledProcessError as e:
-        print(e.output)
-        print("yarn global prettier: ", False)
         return False
 
 def find_yarn_prettier(start_dir):
@@ -107,13 +104,9 @@ def find_yarn_prettier(start_dir):
 
 def _test_yarn_prettier(dir):
     try:
-        print("cmd dir: ", dir)
         subprocess.check_call(["yarn", "bin", "prettier"], cwd=dir, env=get_proc_env())
-        print("yarn bin prettier: ", True)
         return True
     except subprocess.CalledProcessError as e:
-        print(e.output)
-        print("returning false")
         return False
 
 def _generate_dirs(start_dir, limit=None):

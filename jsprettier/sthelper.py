@@ -150,16 +150,13 @@ def resolve_yarn_prettier_cli_path(view, st_project_path):
 
     result = find_yarn_prettier(contiainer_directory)
     if not is_str_none_or_empty(result):
-        print("found yarn from file: ", result)
         return (["yarn", "prettier"], False, result)
 
     result = find_yarn_prettier(st_project_path)
     if not is_str_none_or_empty(result):
-        print("found yarn from project: ", result)
         return (["yarn", "prettier"], False, result)
 
     if is_yarn_global_prettier():
-        print("found yarn global prettier")
         return (["yarn-global", "prettier"], True, os.getcwd())
 
     return None
