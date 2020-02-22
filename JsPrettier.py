@@ -251,6 +251,13 @@ class JsPrettierCommand(sublime_plugin.TextCommand):
         # Get node and prettier command paths:
         node_path = self.node_path
         prettier_cli_path = resolve_yarn_prettier_cli_path(view, st_project_path)
+        if is_str_none_or_empty(prettier_cli_path):
+            log_debug("yarn prettier not found")
+        else:
+            if prettier_cli_path[1]:
+                log_debug(view, "Prettier global found")
+            else:
+                log_debug(view, "Prettier found in " + prettier_cli_path[-1])
 
         if is_str_none_or_empty(prettier_cli_path):
             prettier_cli_path = resolve_prettier_cli_path(view, PLUGIN_PATH, st_project_path)

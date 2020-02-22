@@ -68,6 +68,8 @@ def find_prettier_config(start_dir, alt_dirs=None):
         alt_dirs = []
     if '~' not in alt_dirs:
         alt_dirs.append('~')
+    if '~/.yarn-global' not in alt_dirs:
+        alt_dirs.append('~/.yarn-global')
 
     for d in alt_dirs:
         d = os.path.expanduser(d)
@@ -80,6 +82,7 @@ def find_prettier_config(start_dir, alt_dirs=None):
 
     return None
 
+@memoize
 def is_yarn_global_prettier():
     try:
         subprocess.check_call(["yarn-global", "bin", "prettier"], env=get_proc_env())
@@ -87,6 +90,7 @@ def is_yarn_global_prettier():
     except subprocess.CalledProcessError as e:
         return False
 
+@memoize
 def find_yarn_prettier(start_dir):
     """
     Find where `yarn prettier` command is available searching up the file hierarchy.
@@ -103,6 +107,10 @@ def find_yarn_prettier(start_dir):
     return None
 
 def _test_yarn_prettier(dir):
+    pkg_file = os.path.join(dir, "package.json")
+    if not os.path.exists(pkg_file):    
+        return False
+        
     try:
         subprocess.check_call(["yarn", "bin", "prettier"], cwd=dir, env=get_proc_env())
         return True
